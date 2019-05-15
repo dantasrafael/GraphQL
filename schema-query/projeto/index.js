@@ -1,52 +1,12 @@
 const { ApolloServer, gql } = require('apollo-server')
-
-const typeDefs = gql`
-    scalar Date
-
-    type Usuario {
-        id: ID!
-        nome: String!
-        email: String!
-        idade: Int
-        salario: Float
-        vip: Boolean
-    }
-    
-    # Pontos de entradas de sua API
-    type Query {
-        ola: String!
-        horaAtual: Date!
-        usuarioLogado: Usuario
-    }
-
-`
-
-const resolvers = {
-    Query: {
-        ola() {
-            return 'Bom dia!';
-        },
-        horaAtual() {
-            return new Date;
-        },
-        usuarioLogado() {
-            return {
-                id: 1,
-                nome: 'Ana da Web',
-                email: 'anadaweb@email.com',
-                idade: 23,
-                salario: 1234.56,
-                vip: true
-            }
-        }
-    }
-}
+const { importSchema } = require('graphql-import')
+const resolvers = require('./resolvers')
+const schemaPath = './schema/index.graphql'
 
 const server = new ApolloServer({
-    typeDefs,
+    typeDefs: importSchema(schemaPath),
     resolvers
 })
-
 
 server.listen().then(({ url }) => {
     console.log(`Execuntado em ${url}`);
