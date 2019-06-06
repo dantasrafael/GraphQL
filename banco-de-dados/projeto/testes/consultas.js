@@ -48,6 +48,6 @@ db('perfis')
     .finally(() => db.destroy())
 
 db('perfis')
-    .whereIn('nome', 'like', [1, 2, 3])
+    .whereIn('id', [1, 2, 3])
     .then(res => console.log(res))
-    .finally(() => db.destroy())    
+    .finally(() => db.destroy())
