@@ -1,0 +1,8 @@
+APP_GLOBAL_ENV=DEV
+
+APP_DB_HOST=127.0.0.1
+APP_DB_DATABASE=database_name
+APP_DB_USER=database_user
+APP_DB_PASS=password
+
+APP_AUTH_SECRET=chave_secreta
