@@ -1,31 +1,45 @@
+const bcrypt = require('bcrypt-nodejs')
 const db = require('../../config/db')
 const { perfil: obterPerfil } = require('../Query/perfil')
 const { usuario: obterUsuario } = require('../Query/usuario')
 
-module.exports = {
+const mutations = {
+    registrarUsuario(_, { dados }) {
+        return mutations.novoUsuario(_, {
+            dados: {
+                nome: dados.nome,
+                email: dados.email,
+                senha: dados.senha
+            }
+        })
+    },
     async novoUsuario(_, { dados }) {
         try {
             const idsPerfis = []
-            if(dados.perfis) {
-                for(let filtro of dados.perfis) {
-                    const perfil = await obterPerfil(_, {
-                        filtro
-                    })
-                    if(perfil) idsPerfis.push(perfil.id)
-                }
+            if (!dados.perfis || !dados.perfis.length) {
+                dados.perfis = [
+                    { nome: 'comum' }
+                ]
             }
+
+            for(let filtro of dados.perfis) {
+                const perfil = await obterPerfil(_, { filtro })
+                if(perfil) idsPerfis.push(perfil.id)
+            }
+
+            // cript da senha
+            const salt = bcrypt.genSaltSync()
+            dados.senha = bcrypt.hashSync(dados.senha, salt)
 
             delete dados.perfis
-            const [ id ] = await db('usuarios')
-                .insert(dados)
+            await db('usuarios').insert(dados)
+            const usuario = await db('usuarios').where({ email: dados.email }).first()
 
             for(let perfil_id of idsPerfis) {
-                await db('usuarios_perfis')
-                    .insert({ perfil_id, usuario_id: id })
+                await db('usuarios_perfis').insert({ perfil_id, usuario_id: usuario.id })
             }
 
-            return db('usuarios')
-                .where({ id }).first()
+            return usuario
         } catch(e) {
             throw new Error(e.sqlMessage)
         }
@@ -35,10 +49,8 @@ module.exports = {
             const usuario = await obterUsuario(_, args)
             if(usuario) {
                 const { id } = usuario
-                await db('usuarios_perfis')
-                    .where({ usuario_id: id }).delete()
-                await db('usuarios')
-                    .where({ id }).delete()
+                await db('usuarios_perfis').where({ usuario_id: id }).delete()
+                await db('usuarios').where({ id }).delete()
             }
             return usuario
         } catch(e) {
@@ -52,8 +64,7 @@ module.exports = {
             if(usuario) {
                 const { id } = usuario
                 if(dados.perfis) {
-                    await db('usuarios_perfis')
-                        .where({ usuario_id: id }).delete()
+                    await db('usuarios_perfis').where({ usuario_id: id }).delete()
 
                     for(let filtro of dados.perfis) {
                         const perfil = await obterPerfil(_, {
@@ -61,8 +72,7 @@ module.exports = {
                         })
                         
                         if(perfil) {
-                            await db('usuarios_perfis')
-                                .insert({
+                            await db('usuarios_perfis').insert({
                                     perfil_id: perfil.id,
                                     usuario_id: id
                                 })
@@ -70,10 +80,14 @@ module.exports = {
                     }
                 }
 
+                // cript da senha
+                if (dados.senha) {
+                    const salt = bcrypt.genSaltSync()
+                    dados.senha = bcrypt.hashSync(dados.senha, salt)
+                }
+
                 delete dados.perfis
-                await db('usuarios')
-                    .where({ id })
-                    .update(dados)
+                await db('usuarios').where({ id }).update(dados)
             }
             return !usuario ? null : { ...usuario, ...dados }
         } catch(e) {
@@ -81,3 +95,5 @@ module.exports = {
         }
     }
 }
+
+module.exports = mutations
