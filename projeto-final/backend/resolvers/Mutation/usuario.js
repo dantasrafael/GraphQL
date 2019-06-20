@@ -13,7 +13,9 @@ const mutations = {
             }
         })
     },
-    async novoUsuario(_, { dados }) {
+    async novoUsuario(_, { dados }, ctx) {
+        ctx && ctx.validarAdmin()
+
         try {
             const idsPerfis = []
             if (!dados.perfis || !dados.perfis.length) {
@@ -41,10 +43,11 @@ const mutations = {
 
             return usuario
         } catch(e) {
-            throw new Error(e.sqlMessage)
+            throw new Error(e)
         }
     },
-    async excluirUsuario(_, args) {
+    async excluirUsuario(_, args, ctx) {
+        ctx && ctx.validarAdmin()
         try {
             const usuario = await obterUsuario(_, args)
             if(usuario) {
@@ -54,22 +57,22 @@ const mutations = {
             }
             return usuario
         } catch(e) {
-            throw new Error(e.sqlMessage)
+            throw new Error(e)
         }
 
     },
-    async alterarUsuario(_, { filtro, dados }) {
+    async alterarUsuario(_, { filtro, dados }, ctx) {
+        ctx && ctx.validarUsuarioFiltro(filtro)
+
         try {
             const usuario = await obterUsuario(_, { filtro })
             if(usuario) {
                 const { id } = usuario
-                if(dados.perfis) {
+                if(ctx.admin && dados.perfis) {
                     await db('usuarios_perfis').where({ usuario_id: id }).delete()
 
                     for(let filtro of dados.perfis) {
-                        const perfil = await obterPerfil(_, {
-                            filtro
-                        })
+                        const perfil = await obterPerfil(_, { filtro })
                         
                         if(perfil) {
                             await db('usuarios_perfis').insert({
