@@ -72,7 +72,9 @@ export default {
         },
         perfisSelecionados() {
             if(this.usuario.perfis) {
-                return this.usuario.perfis.map(id => ({ id }))
+                return this.usuario.perfis.map(id => {
+                    return { id } 
+                })
             } else {
                 return null
             }
@@ -95,7 +97,9 @@ export default {
                                 senha: $senha
                                 perfis: $perfis
                             }
-                        )
+                        ) {
+                            id nome email perfis { rotulo }
+                        }
                     }
                 `,
                 variables: {

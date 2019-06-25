@@ -53,7 +53,7 @@ export default {
                 query: gql`
                     query { 
                         usuarios {
-                             id nome email perfis { rotulo } 
+                            id nome email perfis { rotulo } 
                         }
                     }
                 `,
